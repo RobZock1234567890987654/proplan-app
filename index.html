@@ -182,10 +182,10 @@
     </div>
 
     <script>
-        const SB_URL = "https://pkwauyeokfzgultkgbxj.supabase.co";
-        const SB_KEY = "sb_publishable_yYRVACh1Otfjz7yDXzQgfw_f-oHIDxn";
-        const _supabase = supabase.createClient(SB_URL, SB_KEY);
+const SB_URL = "https://pkwauyeokfzgultkgbxj.supabase.co"; // Das /rest/v1/ am Ende muss weg!
+const SB_KEY = "sb_publishable_yYRVACh1Otfjz7yDXzQgfw_f-oHIDxn"; 
 
+const _supabase = supabase.createClient(SB_URL, SB_KEY);
         class ProPlanMobile {
             constructor() {
                 this.appointments = [];
