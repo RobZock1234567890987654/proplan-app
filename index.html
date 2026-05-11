@@ -15,6 +15,7 @@
             --bg: #0f172a;
             --card: #1e293b;
             --text: #f8fafc;
+            --danger: #f43f5e;
         }
 
         body {
@@ -29,7 +30,7 @@
             overflow: hidden;
         }
 
-        /* Mobile Header */
+        /* Header mit Burger-Button */
         header {
             padding: env(safe-area-inset-top) 20px 15px 20px;
             background: #111827;
@@ -37,11 +38,83 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid #334155;
+            z-index: 50;
+        }
+
+        .menu-icon {
+            font-size: 1.5rem;
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
         }
 
         h1 { font-size: 1.2rem; margin: 0; color: var(--primary); }
 
-        /* Termine-Liste (Scroll-Bereich) */
+        /* Sidebar Menü */
+        .sidebar {
+            position: fixed;
+            left: -280px;
+            top: 0;
+            width: 280px;
+            height: 100%;
+            background: var(--card);
+            z-index: 200;
+            transition: 0.3s ease;
+            box-shadow: 10px 0 20px rgba(0,0,0,0.5);
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .sidebar.open { left: 0; }
+
+        .sidebar h2 { border-bottom: 1px solid #334155; padding-bottom: 10px; }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #334155;
+            text-decoration: none;
+            color: white;
+            gap: 15px;
+        }
+
+        /* Toggle Switch für Benachrichtigungen */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background-color: #334155;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        /* Restlicher Content */
         main {
             flex: 1;
             overflow-y: auto;
@@ -49,28 +122,16 @@
             -webkit-overflow-scrolling: touch;
         }
 
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr; /* Eine Spalte auf dem Handy */
-            gap: 12px;
-        }
-
-        @media (min-width: 768px) {
-            .grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
-        }
+        .grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
 
         .card {
             background: var(--card);
             padding: 16px;
             border-radius: 15px;
             border-left: 6px solid var(--primary);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            position: relative;
         }
 
-        .card h3 { margin: 8px 0; font-size: 1.1rem; }
-        .card small { color: #94a3b8; }
-
-        /* Floating Action Button (Der große Plus-Button unten rechts) */
         .fab {
             position: fixed;
             bottom: 30px;
@@ -79,26 +140,21 @@
             height: 60px;
             background: var(--primary);
             border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            border: none;
             font-size: 30px;
             color: white;
             box-shadow: 0 10px 20px rgba(99, 102, 241, 0.4);
-            border: none;
-            cursor: pointer;
             z-index: 10;
         }
 
-        /* Modal (Eingabefenster) */
         .modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.9);
+            background: rgba(0,0,0,0.8);
             display: none;
             justify-content: center;
-            align-items: flex-end; /* Modal kommt von unten auf dem Handy */
-            z-index: 100;
+            align-items: flex-end;
+            z-index: 300;
         }
 
         .modal {
@@ -106,15 +162,10 @@
             width: 100%;
             padding: 25px;
             border-radius: 25px 25px 0 0;
-            animation: slideUp 0.3s ease-out;
+            box-sizing: border-box;
         }
 
-        @keyframes slideUp {
-            from { transform: translateY(100%); }
-            to { transform: translateY(0); }
-        }
-
-        input, select, textarea {
+        input, select {
             width: 100%;
             padding: 14px;
             margin: 10px 0;
@@ -122,7 +173,8 @@
             border: 1px solid #334155;
             color: white;
             border-radius: 10px;
-            font-size: 16px; /* Verhindert automatisches Zoomen bei iOS */
+            font-size: 16px;
+            box-sizing: border-box;
         }
 
         .btn-save {
@@ -133,23 +185,29 @@
             border-radius: 12px;
             border: none;
             font-weight: bold;
-            font-size: 1rem;
-        }
-
-        .delete-btn {
-            color: #f43f5e;
-            background: none;
-            border: none;
-            padding: 10px 0;
-            font-size: 0.9rem;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
 
+    <div id="sidebar" class="sidebar">
+        <h2>Menü</h2>
+        <div class="menu-item">
+            <span>🔔 Benachrichtigungen</span>
+            <label class="switch">
+                <input type="checkbox" id="notif-toggle" onclick="app.toggleNotifications(this)">
+                <span class="slider"></span>
+            </label>
+        </div>
+        <a href="#" class="menu-item" onclick="location.reload()">🔄 App aktualisieren</a>
+        <button onclick="toggleMenu(false)" class="btn-save" style="background:#334155; margin-top: 30px;">Schließen</button>
+    </div>
+
     <header>
+        <button class="menu-icon" onclick="toggleMenu(true)">☰</button>
         <h1>📅 ProPlan</h1>
-        <button onclick="app.enableNotifications()" style="background:none; border:none; color:white; font-size:1.2rem;">🔔</button>
+        <div style="width: 24px;"></div> <!-- Spacer für Zentrierung -->
     </header>
 
     <main>
@@ -160,11 +218,12 @@
 
     <button class="fab" onclick="toggleModal(true)">+</button>
 
+    <!-- Modal für neue Termine -->
     <div id="modal-overlay" class="modal-overlay" onclick="if(event.target == this) toggleModal(false)">
         <div class="modal">
             <h2 style="margin-top:0;">Neuer Termin</h2>
             <form id="appt-form">
-                <input type="text" id="title" placeholder="Titel" required>
+                <input type="text" id="title" placeholder="Was steht an?" required>
                 <div style="display: flex; gap: 10px;">
                     <input type="date" id="date" required>
                     <input type="time" id="time" required>
@@ -175,8 +234,8 @@
                     <option value="15">15 Min vorher</option>
                     <option value="-1">Keine Erinnerung</option>
                 </select>
-                <button type="submit" class="btn-save">Speichern</button>
-                <button type="button" onclick="toggleModal(false)" style="background:none; border:none; color:#94a3b8; width:100%; margin-top:15px;">Schließen</button>
+                <button type="submit" class="btn-save">Termin speichern</button>
+                <button type="button" onclick="toggleModal(false)" style="background:none; border:none; color:#94a3b8; width:100%; margin-top:15px;">Abbrechen</button>
             </form>
         </div>
     </div>
@@ -194,8 +253,12 @@
 
             async init() {
                 document.getElementById('appt-form').onsubmit = (e) => this.save(e);
+                // Notification Toggle Status setzen
+                if (Notification.permission === "granted") {
+                    document.getElementById('notif-toggle').checked = true;
+                }
                 await this.load();
-                setInterval(() => this.checkNotifications(), 20000);
+                setInterval(() => this.checkNotifications(), 15000);
             }
 
             async load() {
@@ -218,10 +281,15 @@
                 this.load();
             }
 
-            enableNotifications() {
-                Notification.requestPermission().then(p => {
-                    if(p === 'granted') alert("Erinnerungen aktiviert!");
-                });
+            toggleNotifications(el) {
+                if (el.checked) {
+                    Notification.requestPermission().then(p => {
+                        if (p !== 'granted') {
+                            el.checked = false;
+                            alert("Berechtigung wurde abgelehnt.");
+                        }
+                    });
+                }
             }
 
             checkNotifications() {
@@ -230,14 +298,19 @@
                 this.appointments.forEach(a => {
                     const t = new Date(`${a.date}T${a.time}`);
                     const trigger = new Date(t.getTime() - (a.notify_lead_time || 0) * 60000);
-                    if (Math.abs(now - trigger) < 30000) {
-                        new Notification(a.title, { body: "Dein Termin steht an!" });
+                    // Check ob Zeit erreicht (innerhalb eines 30-Sekunden Fensters)
+                    if (Math.abs(now - trigger) < 15000 && !a.notified) {
+                        new Notification(a.title, { 
+                            body: `Erinnerung: Dein Termin um ${a.time} Uhr.`,
+                            icon: 'https://cdn-icons-png.flaticon.com/512/3652/3652191.png'
+                        });
+                        a.notified = true; // Verhindert doppeltes Feuern im selben Fenster
                     }
                 });
             }
 
             async delete(id) {
-                if(confirm("Löschen?")) {
+                if(confirm("Diesen Termin wirklich löschen?")) {
                     await _supabase.from('appointments').delete().eq('id', id);
                     this.load();
                 }
@@ -245,17 +318,24 @@
 
             render() {
                 const g = document.getElementById('grid');
+                if (this.appointments.length === 0) {
+                    g.innerHTML = `<p style="text-align:center; color:#64748b; margin-top:50px;">Keine Termine gefunden.</p>`;
+                    return;
+                }
                 g.innerHTML = this.appointments.map(a => `
                     <div class="card">
-                        <small>${a.date} | ${a.time} Uhr</small>
-                        <h3>${a.title}</h3>
-                        <button class="delete-btn" onclick="app.delete('${a.id}')">Löschen</button>
+                        <small style="display:block; margin-bottom:4px;">${new Date(a.date).toLocaleDateString('de-DE')} | ${a.time} Uhr</small>
+                        <h3 style="margin:0;">${a.title}</h3>
+                        <button class="delete-btn" onclick="app.delete('${a.id}')" style="color:var(--danger); background:none; border:none; padding:10px 0 0 0; font-size:0.8rem; cursor:pointer;">Löschen</button>
                     </div>
                 `).join('');
             }
         }
 
+        // UI Helper
         function toggleModal(s) { document.getElementById('modal-overlay').style.display = s ? 'flex' : 'none'; }
+        function toggleMenu(s) { document.getElementById('sidebar').classList.toggle('open', s); }
+
         const app = new ProPlanMobile();
     </script>
 </body>
