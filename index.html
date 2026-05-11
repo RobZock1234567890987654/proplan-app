@@ -1,118 +1,235 @@
-<style>
-    :root {
-        --primary: #6366f1;
-        --bg: #0f172a;
-        --card: #1e293b;
-        --text: #f8fafc;
-        --sidebar-width: 280px;
-    }
-
-    body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        background: var(--bg);
-        color: var(--text);
-        margin: 0;
-        display: flex; /* Wichtig für PC-Layout */
-        height: 100vh;
-        overflow: hidden;
-    }
-
-    /* Sidebar Design */
-    .sidebar {
-        position: fixed;
-        left: -280px; /* Standard für Mobile */
-        top: 0;
-        width: var(--sidebar-width);
-        height: 100%;
-        background: var(--card);
-        z-index: 200;
-        transition: 0.3s ease;
-        padding: 20px;
-        box-sizing: border-box;
-        border-right: 1px solid #334155;
-    }
-
-    /* PC-Modus: Sidebar fest anzeigen */
-    @media (min-width: 1024px) {
-        .sidebar {
-            position: relative; /* Nicht mehr überlagernd */
-            left: 0;
-            display: block;
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProPlan - Termine</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --sidebar-width: 260px;
+            --border: #334155;
         }
-        .menu-icon { display: none; } /* Burger-Button am PC verstecken */
-        
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--card);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        /* Mobile Sidebar Handling */
+        @media (max-width: 1023px) {
+            .sidebar {
+                position: fixed;
+                height: 100%;
+                transform: translateX(-100%);
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+        }
+
+        .sidebar h2 { color: var(--primary); margin-top: 0; }
+
+        /* --- MAIN CONTENT --- */
         .main-wrapper {
             flex: 1;
             display: flex;
             flex-direction: column;
+            min-width: 0; /* Verhindert Layout-Bruch */
         }
-    }
 
-    /* Mobile-Modus: Sidebar überlagernd wenn offen */
-    .sidebar.open { left: 0; }
+        header {
+            height: 64px;
+            background: #111827;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            border-bottom: 1px solid var(--border);
+            justify-content: space-between;
+        }
 
-    /* Container für den Rest der App */
-    .main-wrapper {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-    }
+        .menu-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: none;
+        }
 
-    header {
-        padding: 15px 20px;
-        background: #111827;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid #334155;
-    }
+        @media (max-width: 1023px) { .menu-btn { display: block; } }
 
-    main {
-        flex: 1;
-        overflow-y: auto;
-        padding: 15px;
-    }
+        main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+        }
 
-    /* Toggle Switch Styles (bleiben gleich wie vorher) */
-    .switch { position: relative; display: inline-block; width: 44px; height: 22px; }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider { position: absolute; cursor: pointer; inset: 0; background-color: #334155; transition: .4s; border-radius: 34px; }
-    .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-    input:checked + .slider { background-color: var(--primary); }
-    input:checked + .slider:before { transform: translateX(22px); }
+        /* --- UI COMPONENTS --- */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
 
-    .menu-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #334155; color: white; text-decoration: none; }
-</style>
+        .card {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
 
+        .menu-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 10px;
+            color: var(--text);
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 5px;
+        }
+
+        .menu-item:hover { background: #2d3748; }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        /* Toggle Switch */
+        .switch { position: relative; width: 40px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; inset: 0; background: #475569; border-radius: 20px; transition: .3s; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: .3s; }
+        input:checked + .slider { background: var(--primary); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        .fab {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            cursor: pointer;
+        }
+    </style>
+</head>
 <body>
-    <div id="sidebar" class="sidebar">
-        <h2 style="color: var(--primary)">ProPlan Menü</h2>
-        <div class="menu-item">
-            <span>🔔 Benachrichtigungen</span>
-            <label class="switch">
-                <input type="checkbox" id="notif-toggle" onclick="app.toggleNotifications(this)">
-                <span class="slider"></span>
-            </label>
-        </div>
-        <a href="#" class="menu-item" onclick="location.reload()">🔄 Aktualisieren</a>
+
+    <aside id="sidebar" class="sidebar">
+        <h2>ProPlan</h2>
+        <nav>
+            <div class="menu-item">
+                <span>🔔 Mitteilungen</span>
+                <label class="switch">
+                    <input type="checkbox" id="notif-toggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <a href="#" class="menu-item" onclick="location.reload()">🔄 Refresh</a>
+        </nav>
         
-        <button onclick="toggleMenu(false)" class="btn-save" id="close-btn-mobile" style="background:#334155; margin-top: 30px;">Schließen</button>
-    </div>
+        <button class="btn-primary" style="margin-top: auto; background: var(--border);" onclick="toggleMenu()">Schließen</button>
+    </aside>
 
     <div class="main-wrapper">
         <header>
-            <button class="menu-icon" onclick="toggleMenu(true)" style="background:none; border:none; color:white; font-size:1.5rem;">☰</button>
-            <h1>📅 Termine</h1>
-            <div style="width: 24px;"></div>
-        </header>
+            <button class="menu-btn" onclick="toggleMenu()">☰</button>
+            <h1 style="font-size: 1.25rem;">Termin-Übersicht</h1>
+            <div style="width: 40px;"></div> </header>
 
         <main>
             <div id="grid" class="grid">
-                </div>
+                <p id="loading-text">Lade Termine aus Supabase...</p>
+            </div>
         </main>
     </div>
 
-    <button class="fab" onclick="toggleModal(true)">+</button>
-    
-    </body>
+    <button class="fab" onclick="alert('Neu hinzufügen')">+</button>
+
+    <script>
+        // --- Supabase Setup ---
+        const SUPABASE_URL = 'DEINE_URL';
+        const SUPABASE_KEY = 'DEIN_KEY';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // --- Sidebar Logic ---
+        function toggleMenu() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+
+        // --- Data Logic ---
+        async function fetchTasks() {
+            try {
+                const { data, error } = await supabase
+                    .from('tasks') // Ersetze 'tasks' mit deinem Tabellennamen
+                    .select('*');
+
+                if (error) throw error;
+
+                const grid = document.getElementById('grid');
+                grid.innerHTML = ''; // Lade-Text entfernen
+
+                if (data.length === 0) {
+                    grid.innerHTML = '<p>Keine Termine gefunden.</p>';
+                    return;
+                }
+
+                data.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.innerHTML = `
+                        <h3>${item.title || 'Unbenannt'}</h3>
+                        <p style="color: var(--text-muted)">${item.description || ''}</p>
+                    `;
+                    grid.appendChild(card);
+                });
+            } catch (err) {
+                console.error("Fehler beim Laden:", err.message);
+                document.getElementById('loading-text').innerText = "Fehler beim Laden der Daten.";
+            }
+        }
+
+        // Initialer Aufruf
+        // fetchTasks(); // Erst entkommentieren, wenn Key/URL drin sind!
+    </script>
+</body>
+</html>
