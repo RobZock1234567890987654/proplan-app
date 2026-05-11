@@ -2,225 +2,261 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProPlan Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>ProPlan Mobile</title>
+    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <style>
         :root {
             --primary: #6366f1;
             --bg: #0f172a;
             --card: #1e293b;
             --text: #f8fafc;
-            --sidebar-width: 280px;
-            --border: #334155;
         }
 
         body {
-            font-family: 'Inter', system-ui, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background: var(--bg);
             color: var(--text);
             margin: 0;
+            padding: 0;
             display: flex;
+            flex-direction: column;
             height: 100vh;
             overflow: hidden;
         }
 
-        /* --- SIDEBAR --- */
-        .sidebar {
-            width: var(--sidebar-width);
-            background: var(--card);
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            padding: 20px;
-            transition: transform 0.3s ease;
-            z-index: 1000;
-        }
-
-        @media (max-width: 1024px) {
-            .sidebar {
-                position: fixed;
-                height: 100%;
-                transform: translateX(-100%);
-            }
-            .sidebar.open { transform: translateX(0); }
-        }
-
-        /* --- MAIN --- */
-        .main-wrapper { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-        
+        /* Mobile Header */
         header {
-            padding: 0 20px;
-            height: 60px;
+            padding: env(safe-area-inset-top) 20px 15px 20px;
             background: #111827;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid #334155;
         }
 
-        main { flex: 1; overflow-y: auto; padding: 20px; }
+        h1 { font-size: 1.2rem; margin: 0; color: var(--primary); }
+
+        /* Termine-Liste (Scroll-Bereich) */
+        main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            -webkit-overflow-scrolling: touch;
+        }
 
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 15px;
+            grid-template-columns: 1fr; /* Eine Spalte auf dem Handy */
+            gap: 12px;
+        }
+
+        @media (min-width: 768px) {
+            .grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
         }
 
         .card {
             background: var(--card);
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid var(--border);
-            position: relative;
+            padding: 16px;
+            border-radius: 15px;
+            border-left: 6px solid var(--primary);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
         }
 
-        /* --- MODAL --- */
-        #modal {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-            display: none; align-items: center; justify-content: center; z-index: 2000;
-        }
+        .card h3 { margin: 8px 0; font-size: 1.1rem; }
+        .card small { color: #94a3b8; }
 
-        .modal-content {
-            background: var(--card); padding: 25px; border-radius: 15px;
-            width: 90%; max-width: 450px; border: 1px solid var(--border);
-        }
-
-        input, textarea {
-            width: 100%; padding: 12px; margin: 10px 0;
-            background: #0f172a; border: 1px solid var(--border);
-            color: white; border-radius: 8px;
-        }
-
-        .btn-primary {
-            background: var(--primary); color: white; border: none;
-            padding: 10px 20px; border-radius: 8px; cursor: pointer; width: 100%;
-        }
-
+        /* Floating Action Button (Der große Plus-Button unten rechts) */
         .fab {
-            position: fixed; bottom: 25px; right: 25px;
-            width: 60px; height: 60px; border-radius: 50%;
-            background: var(--primary); color: white; border: none;
-            font-size: 30px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            position: fixed;
+            bottom: 30px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 30px;
+            color: white;
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.4);
+            border: none;
+            cursor: pointer;
+            z-index: 10;
         }
 
-        .menu-item {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 12px; color: white; text-decoration: none; border-radius: 8px;
+        /* Modal (Eingabefenster) */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            justify-content: center;
+            align-items: flex-end; /* Modal kommt von unten auf dem Handy */
+            z-index: 100;
         }
-        .menu-item:hover { background: rgba(255,255,255,0.05); }
+
+        .modal {
+            background: var(--card);
+            width: 100%;
+            padding: 25px;
+            border-radius: 25px 25px 0 0;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 14px;
+            margin: 10px 0;
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: white;
+            border-radius: 10px;
+            font-size: 16px; /* Verhindert automatisches Zoomen bei iOS */
+        }
+
+        .btn-save {
+            background: var(--primary);
+            color: white;
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            border: none;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .delete-btn {
+            color: #f43f5e;
+            background: none;
+            border: none;
+            padding: 10px 0;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
 
-    <aside id="sidebar" class="sidebar">
-        <h2 style="color: var(--primary)">ProPlan</h2>
-        <nav style="flex: 1">
-            <a href="#" class="menu-item" onclick="location.reload()">🔄 Aktualisieren</a>
-            <div class="menu-item">
-                <span>🔔 Push-Infos</span>
-                <input type="checkbox" id="notif">
-            </div>
-        </nav>
-        <button class="btn-primary" style="background: #334155" onclick="toggleMenu()">Schließen</button>
-    </aside>
+    <header>
+        <h1>📅 ProPlan</h1>
+        <button onclick="app.enableNotifications()" style="background:none; border:none; color:white; font-size:1.2rem;">🔔</button>
+    </header>
 
-    <div class="main-wrapper">
-        <header>
-            <button onclick="toggleMenu()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer">☰</button>
-            <h1>Termine</h1>
-            <div style="width: 24px"></div>
-        </header>
-
-        <main>
-            <div id="grid" class="grid">
-                <p>Lade Daten...</p>
-            </div>
-        </main>
-    </div>
+    <main>
+        <div id="grid" class="grid">
+            <p style="text-align:center; color:#64748b;">Lade Termine...</p>
+        </div>
+    </main>
 
     <button class="fab" onclick="toggleModal(true)">+</button>
 
-    <div id="modal">
-        <div class="modal-content">
-            <h2 style="margin-top:0">Neuer Termin</h2>
-            <input type="text" id="task-title" placeholder="Titel des Termins">
-            <textarea id="task-desc" rows="3" placeholder="Details..."></textarea>
-            <button class="btn-primary" id="save-btn" onclick="addTask()">Termin speichern</button>
-            <button class="btn-primary" style="background:none; margin-top:10px" onclick="toggleModal(false)">Abbrechen</button>
+    <div id="modal-overlay" class="modal-overlay" onclick="if(event.target == this) toggleModal(false)">
+        <div class="modal">
+            <h2 style="margin-top:0;">Neuer Termin</h2>
+            <form id="appt-form">
+                <input type="text" id="title" placeholder="Titel" required>
+                <div style="display: flex; gap: 10px;">
+                    <input type="date" id="date" required>
+                    <input type="time" id="time" required>
+                </div>
+                <select id="notify_time">
+                    <option value="0">Pünktlich erinnern</option>
+                    <option value="5">5 Min vorher</option>
+                    <option value="15">15 Min vorher</option>
+                    <option value="-1">Keine Erinnerung</option>
+                </select>
+                <button type="submit" class="btn-save">Speichern</button>
+                <button type="button" onclick="toggleModal(false)" style="background:none; border:none; color:#94a3b8; width:100%; margin-top:15px;">Schließen</button>
+            </form>
         </div>
     </div>
 
     <script>
-        // --- Supabase Konfiguration ---
-        const SUPABASE_URL = 'https://pkwauyeokfzgultkgbxj.supabase.co';
-        const SUPABASE_KEY = 'DEIN_ANON_KEY_HIER_EINSETZEN'; // <--- WICHTIG!
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const SB_URL = "https://pkwauyeokfzgultkgbxj.supabase.co";
+        const SB_KEY = "sb_publishable_yYRVACh1Otfjz7yDXzQgfw_f-oHIDxn";
+        const _supabase = supabase.createClient(SB_URL, SB_KEY);
 
-        // --- UI Steuerung ---
-        function toggleMenu() {
-            document.getElementById('sidebar').classList.toggle('open');
-        }
-
-        function toggleModal(show) {
-            document.getElementById('modal').style.display = show ? 'flex' : 'none';
-        }
-
-        // --- Daten Operationen ---
-        async function fetchTasks() {
-            const grid = document.getElementById('grid');
-            try {
-                const { data, error } = await supabaseClient
-                    .from('tasks') // Stelle sicher, dass deine Tabelle 'tasks' heißt
-                    .select('*')
-                    .order('created_at', { ascending: false });
-
-                if (error) throw error;
-
-                grid.innerHTML = data.length ? data.map(t => `
-                    <div class="card">
-                        <h3 style="margin:0 0 10px 0">${t.title}</h3>
-                        <p style="color:var(--text-muted); margin:0">${t.description || ''}</p>
-                    </div>
-                `).join('') : '<p>Noch keine Termine vorhanden.</p>';
-
-            } catch (err) {
-                grid.innerHTML = `<p style="color:#ef4444">Fehler: ${err.message}</p>`;
+        class ProPlanMobile {
+            constructor() {
+                this.appointments = [];
+                this.init();
             }
-        }
 
-        async function addTask() {
-            const title = document.getElementById('task-title').value;
-            const desc = document.getElementById('task-desc').value;
-            const btn = document.getElementById('save-btn');
+            async init() {
+                document.getElementById('appt-form').onsubmit = (e) => this.save(e);
+                await this.load();
+                setInterval(() => this.checkNotifications(), 20000);
+            }
 
-            if (!title) return alert("Titel fehlt!");
+            async load() {
+                const { data } = await _supabase.from('appointments').select('*').order('date');
+                this.appointments = data || [];
+                this.render();
+            }
 
-            btn.disabled = true;
-            btn.innerText = "Wird gespeichert...";
-
-            try {
-                const { error } = await supabaseClient
-                    .from('tasks')
-                    .insert([{ title, description: desc }]);
-
-                if (error) throw error;
-
-                // Reset & Refresh
-                document.getElementById('task-title').value = '';
-                document.getElementById('task-desc').value = '';
+            async save(e) {
+                e.preventDefault();
+                const entry = {
+                    title: document.getElementById('title').value,
+                    date: document.getElementById('date').value,
+                    time: document.getElementById('time').value,
+                    notify_lead_time: parseInt(document.getElementById('notify_time').value)
+                };
+                await _supabase.from('appointments').insert([entry]);
                 toggleModal(false);
-                fetchTasks();
-            } catch (err) {
-                alert("Fehler: " + err.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "Termin speichern";
+                e.target.reset();
+                this.load();
+            }
+
+            enableNotifications() {
+                Notification.requestPermission().then(p => {
+                    if(p === 'granted') alert("Erinnerungen aktiviert!");
+                });
+            }
+
+            checkNotifications() {
+                if (Notification.permission !== "granted") return;
+                const now = new Date();
+                this.appointments.forEach(a => {
+                    const t = new Date(`${a.date}T${a.time}`);
+                    const trigger = new Date(t.getTime() - (a.notify_lead_time || 0) * 60000);
+                    if (Math.abs(now - trigger) < 30000) {
+                        new Notification(a.title, { body: "Dein Termin steht an!" });
+                    }
+                });
+            }
+
+            async delete(id) {
+                if(confirm("Löschen?")) {
+                    await _supabase.from('appointments').delete().eq('id', id);
+                    this.load();
+                }
+            }
+
+            render() {
+                const g = document.getElementById('grid');
+                g.innerHTML = this.appointments.map(a => `
+                    <div class="card">
+                        <small>${a.date} | ${a.time} Uhr</small>
+                        <h3>${a.title}</h3>
+                        <button class="delete-btn" onclick="app.delete('${a.id}')">Löschen</button>
+                    </div>
+                `).join('');
             }
         }
 
-        // Initiales Laden
-        fetchTasks();
+        function toggleModal(s) { document.getElementById('modal-overlay').style.display = s ? 'flex' : 'none'; }
+        const app = new ProPlanMobile();
     </script>
 </body>
 </html>
